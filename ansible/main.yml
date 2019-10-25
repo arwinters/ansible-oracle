@@ -1,0 +1,105 @@
+#
+#  ProRail - Ansible Oracle Database Module Examples
+#
+#  Autor: anthony.winters@prorail.nl
+#
+- hosts: oracle
+  connection: local
+  tasks:
+
+    ### Get Database Facts
+    - name: "Gather database facts"
+      oracle_facts:
+        hostname: "{{ oracle_host }}"
+        port: "{{ oracle_port }}"
+        service_name: "{{ oracle_service }}"
+        user: "{{ oracle_user }}"
+        password: "{{ oracle_password }}"
+      register: dbfacts
+      delegate_to: localhost
+
+    ### Show Database Facts and results
+    - name: "Show Oracle Xe Db Facts"
+      debug:
+        var: dbfacts.ansible_facts.database
+
+    - name: "Show Oracle Xe Db Version"
+      debug:
+        var: dbfacts.ansible_facts.version
+
+    - name: "Show Oracle Xe Db LOG_MODE Value"
+      debug:
+        var: dbfacts.ansible_facts.database.LOG_MODE
+
+    - name: "Show Oracle Xe Db LOG_MODE Value in Pretty Format"
+      debug:
+        msg: "LOG MODE value -> {{ dbfacts.ansible_facts.database.LOG_MODE }}"
+
+    ### Create User
+#    - name: "Create Oracle Xe Db User"
+#      oracle_user:
+#        hostname: "{{ oracle_host }}"
+#        port: "{{ oracle_port }}"
+#        service_name: "{{ oracle_service }}"
+#        user: "{{ oracle_user }}"
+#        password: "{{ oracle_password }}"
+##        schema: myschema
+##        schema_password: mypass
+#        default_tablespace: "{{ oracle_table_name }}"
+#        grants: "'create session', create any table'"
+#        state: present
+#      when: create_user
+
+    ### Create tablespace with oracle_tablespace module
+    - name: "Create Oracle Xe Db tablespace with the Ansible module"
+      oracle_tablespace:
+        hostname: "{{ oracle_host }}"
+        port: "{{ oracle_port }}"
+        service_name: "{{ oracle_service }}"
+        user: "{{ oracle_user }}"
+        password: "{{ oracle_password }}"
+        tablespace: "{{ oracle_table_name }}"
+        datafile: "{{ oracle_data_file }}"
+        size: 100M
+        state: present
+      when: create_table_space
+
+
+    ### Execute arbitary sql a better way :-)
+#    - name: "Execute arbitary sql from script - Example 1"
+#      oracle_sql:
+#        hostname: "{{ oracle_host }}"
+#        port: "{{ oracle_port }}"
+#        service_name: "{{ oracle_service }}"
+#        user: "{{ oracle_user }}"
+#        password: "{{ oracle_password }}"
+#        script: files/create_table.sql
+#      when: create_table_with_script
+    
+
+    - name: "Execute arbitary sql from query - Example 2"
+      oracle_sql:
+        hostname: "{{ oracle_host }}"
+        port: "{{ oracle_port }}"
+        service_name: "{{ oracle_service }}"
+        user: "{{ oracle_user }}"
+        password: "{{ oracle_password }}"
+        sql: 'SELECT table_name FROM user_tables'
+      register: show_all_tables
+
+    - debug:
+        var: show_all_tables 
+
+    - name: "Execute arbitary sql from query - Example 3"
+      oracle_sql:
+        hostname: "{{ oracle_host }}"
+        port: "{{ oracle_port }}"
+        service_name: "{{ oracle_service }}"
+        user: "{{ oracle_user }}"
+        password: "{{ oracle_password }}"
+        sql: "select COLUMN_NAME from ALL_TAB_COLUMNS where TABLE_NAME='{{ oracle_table_name }}'"
+      register: show_table_columns
+
+    - debug:
+        var: show_table_columns
+
